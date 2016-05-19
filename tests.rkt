@@ -1,3 +1,5 @@
+#lang racket
+
 (require
  redex/reduction-semantics
  "cic.rkt"
