@@ -193,6 +193,15 @@
    n
    (where (D : n _ _) (Δ-ref-by-constructor Δ c))])
 
+;; Return the number of non-parameters arguments for the constructor c_0
+(define-metafunction cicL
+  Δ-constructor-ref-non-parameter-count : Δ_0 c_0 -> n
+  #:pre (Δ-in-constructor-dom Δ_0 c_0)
+  [(Δ-constructor-ref-non-parameter-count Δ c)
+   ,(- (term (Ξ-length Ξ)) (term n))
+   (where n (Δ-constructor-ref-parameter-count Δ c))
+   (judgment-holds (Δ-constr-in Δ c (in-hole Ξ (in-hole Θ D))))])
+
 ;; Returns the inductively defined type that x constructs
 (define-metafunction cicL
   Δ-key-by-constructor : Δ_0 c_0 -> D
@@ -244,21 +253,24 @@
    -------------------------------
    (Δ-constr-in Δ c t)])
 
+;; All ref-index metafunctions need a Θ of parameters because hygiene and dependency
 (define-metafunction cicL
-  Δ-ref-index-Ξ : Δ_0 D_0 -> Ξ
-  #:pre (Δ-in-dom Δ_0 D_0)
-  [(Δ-ref-index-Ξ Δ D)
-   (Ξ-drop Ξ n)
-   (where (D : n (in-hole Ξ U) _) (snoc-env-ref Δ D))])
+  Δ-ref-index-Ξ : Δ_0 D_0 Θ_0 -> Ξ
+  #:pre ,(and (term (Δ-in-dom Δ_0 D_0))
+              (= (term (Θ-length Θ_0)) (term (Δ-ref-parameter-count Δ_0 D_0))))
+  [(Δ-ref-index-Ξ Δ D Θ)
+   Ξ
+   (where (D : _ t _) (snoc-env-ref Δ D))
+   (where (in-hole Ξ U) (instantiate t Θ))])
 
 (define-metafunction cicL
-  Δ-constructor-ref-index-Ξ : Δ_0 c_0 -> Ξ
-  #:pre (Δ-in-constructor-dom Δ_0 c_0)
-  [(Δ-constructor-ref-index-Ξ Δ c)
-   (Ξ-drop Ξ n)
-   (where (D : n _ _) (Δ-ref-by-constructor Δ c))
-   (where (in-hole Ξ (in-hole Θ D)) (Δ-ref-constructor-type Δ c))])
-
+  Δ-constructor-ref-index-Ξ : Δ_0 c_0 Θ_0 -> Ξ
+  #:pre ,(and (term (Δ-in-constructor-dom Δ_0 c_0))
+              (= (term (Θ-length Θ_0)) (term (Δ-constructor-ref-parameter-count Δ_0 c_0))))
+  [(Δ-constructor-ref-index-Ξ Δ c Θ)
+   Ξ
+   (where t (Δ-ref-constructor-type Δ c))
+   (where (in-hole Ξ (in-hole Θ_0 D)) (instantiate t Θ))])
 
 ;; --------------------------------------------------------
 ;; aux defs
@@ -348,11 +360,11 @@
 
 ;; Instantiate a Π type
 (define-metafunction cicL
-  instantiate : t (e ...) -> t
-  [(instantiate t ())
+  instantiate : t Θ -> t
+  [(instantiate t hole)
    t]
-  [(instantiate (Π (x : t) t_1) (e any ...))
-   (instantiate (substitute t_1 x e) (any ...))])
+  [(instantiate (Π (x : t) t_1) (in-hole Θ (@ hole e)))
+   (instantiate (substitute t_1 x e) Θ)])
 
 ;; Select the method in e ... that corresponds to the constructor c
 (define-metafunction cicL
@@ -616,18 +628,16 @@
   [;; Must be case analyzing an inductive D applied to indices Θ
    (type-infer Δ Γ e (name t_I (in-hole Θ D)))
 
-   ;; Extend Γ with parameters determined from Θ
-   (where Γ_p (declare-parameters Δ Γ Θ D))
    (where Θ_p (take-parameters Δ D Θ))
    ;; check the indices match the inductive type
-   (check-indices Δ Γ_p D (e_i ...))
+   (check-indices Δ Γ D Θ_p (e_i ...))
    ;; Check the motive matches the inductive type
-   (check-motive Δ Γ_p t_I D Θ_p e_motive)
+   (check-motive Δ Γ t_I D Θ_p e_motive)
    ;; Compute the return type from the motive
    (where t (@ e_motive e_i ... e))
-   (type-infer Δ Γ_p t U)
+   (type-infer Δ Γ t U)
    ;; Check the methods match their constructors, and return type from motive
-   (check-methods Δ Γ_p D t (e_m ...))
+   (check-methods Δ Γ D t Θ_p (e_m ...))
    ------------------------------------------------------------- "match"
    (type-infer Δ Γ (case e (e_i ..._0) e_motive (e_m ..._1)) t)]
 
@@ -647,7 +657,7 @@
    --------------------- "T-Conv"
    (type-check Δ Γ e t)])
 
-;; ------------------------------------------------------------------------ 
+;; ------------------------------------------------------------------------
 ;; Strict positivity
 
 ;; Determine if x appears free in any, by using substitution
@@ -707,7 +717,7 @@
    ;; Instantiated types of the constructors for D_i satisfy the nested positivity condition for D
    (where Θ_p (Θ-take Θ n))
    (where ((c : t_c) ...) (Δ-ref-constructor-map Δ D_i))
-   (nested-positivity-condition Δ Γ D D_i (instantiate t_c (Θ-flatten Θ_p))) ...
+   (nested-positivity-condition Δ Γ D D_i (instantiate t_c Θ_p)) ...
    ---------------------------------------- "OSP-Ind"
    (occurs-strictly-positively Δ Γ D t)])
 
@@ -727,7 +737,7 @@
    ---------------------------------------------------------- "NPC-Π"
    (nested-positivity-condition Δ Γ D D_i (Π (x : t_0) t_1))])
 
-;; ------------------------------------------------------------------------ 
+;; ------------------------------------------------------------------------
 ;; case helpers
 
 ;; Can an inductive type D that lives in U_A be eliminated to some type that lives in U_B?
@@ -760,16 +770,6 @@
    (Θ-take Θ n)
    (where n (Δ-ref-parameter-count Δ D))])
 
-;; Extend Γ with the parameters for D, and let decls determined from Θ
-(define-metafunction cicL
-  declare-parameters : Δ_0 Γ Θ D_0 -> Γ
-  #:pre (Δ-in-dom Δ_0 D_0)
-  [(declare-parameters Δ Γ Θ D)
-   (Γ-build Γ ((x = e : t) ...))
-   (where (D : n (in-hole Ξ U) _) (snoc-env-ref Δ D))
-   (where ((x : t) ..._0) ,(take (term (Ξ-flatten Ξ)) (term n)))
-   (where (e ..._0) ,(take (term (Θ-flatten Θ)) (term n)))])
-
 (define-judgment-form cicL
   #:mode (type-wrt-telescope I I I I)
   #:contract (type-wrt-telescope Δ Γ (e ...) Ξ)
@@ -784,20 +784,20 @@
    (type-wrt-telescope Δ Γ (e e_i ...) (Π (x : t) Ξ))])
 
 (define-judgment-form cicL
-  #:mode (check-indices I I I I)
-  #:contract (check-indices Δ Γ D (e ...))
+  #:mode (check-indices I I I I I)
+  #:contract (check-indices Δ Γ D Θ (e ...))
 
-  [(where Ξ_D (Δ-ref-index-Ξ Δ D))
+  [(where Ξ_D (Δ-ref-index-Ξ Δ D Θ))
    ;; Check that the indices e ... match the inductive telescope
    (type-wrt-telescope Δ Γ (e ...) Ξ_D)
    -------------------------------
-   (check-indices Δ Γ D (e ...))])
+   (check-indices Δ Γ D Θ (e ...))])
 
 (define-judgment-form cicL
   #:mode (check-motive I I I I I I)
   #:contract (check-motive Δ Γ t D Θ e)
 
-  [(where Ξ_D (Δ-ref-index-Ξ Δ D))
+  [(where Ξ_D (Δ-ref-index-Ξ Δ D Θ_p))
    ;; check that the motive matches the inductive index telescope, i.e., the telescope sans parameters.
    (type-infer Δ Γ e (in-hole Ξ_D (Π (x : t_D) U_B)))
    (subtype Δ Γ t_D (Ξ-apply Ξ_D (in-hole Θ_p D)))
@@ -808,14 +808,14 @@
    (check-motive Δ Γ t_I D Θ_p e)])
 
 (define-judgment-form cicL
-  #:mode (check-methods I I I I I)
-  #:contract (check-methods Δ Γ D t (e ...))
+  #:mode (check-methods I I I I I I)
+  #:contract (check-methods Δ Γ D t Θ (e ...))
 
   [(where ((c _ _) ..._1) (Δ-ref-constructor-map Δ D))
-   (where (Ξ_c ..._1) ((Δ-constructor-ref-index-Ξ Δ c) ...))
+   (where (Ξ_c ..._1) ((Δ-constructor-ref-index-Ξ Δ c Θ) ...))
    (type-check Δ Γ e (in-hole Ξ_c t)) ...
    -------------------------------
-   (check-methods Δ Γ D t (e ...))])
+   (check-methods Δ Γ D t Θ (e ...))])
 
 ;; ------------------------------------------------------------------------
 ;; termination checking
@@ -911,18 +911,18 @@
 (define-metafunction cicL
   split-methods : Δ D (e ...) -> (((x ...) e) ...)
   [(split-methods Δ D (e ..._0))
-   ((split-method Ξ e) ...)
-   (where ((c _ _) ..._0) (Δ-ref-constructor-map Δ D))
-   (where (Ξ ..._0) ((Δ-constructor-ref-index-Ξ Δ c) ...))])
+   ((split-method n e) ...)
+   (where (c ..._0) (Δ-ref-constructors Δ D))
+   (where (n ..._0) ((Δ-constructor-ref-non-parameter-count Δ c) ...))])
 
 ;; Splits a method into its structurally smaller arguments and the body of the method
 (define-metafunction cicL
-  split-method : Ξ e -> ((x ...) e)
-  [(split-method hole e)
+  split-method : n e -> ((x ...) e)
+  [(split-method 0 e)
    (() e)]
-  [(split-method (Π (x_0 : t_0) Ξ) (λ (x : t) e))
+  [(split-method n (λ (x : t) e))
    ((x x_r ...) e_r)
-   (where ((x_r ...) e_r) (split-method Ξ e))])
+   (where ((x_r ...) e_r) (split-method ,(sub1 (term n)) e))])
 
 ;; Does e terminate?
 (define-judgment-form cicL
