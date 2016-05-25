@@ -177,6 +177,22 @@
    -------------------------------
    (Δ-type-in Δ D t)])
 
+;; Return the number of parameters for the inductive type D
+(define-metafunction cicL
+  Δ-ref-parameter-count : Δ_0 D_0 -> n
+  #:pre (Δ-in-dom Δ_0 D_0)
+  [(Δ-ref-parameter-count Δ D)
+   n
+   (where (D : n _ _) (snoc-env-ref Δ D))])
+
+;; Return the number of parameters for the inductive type D that has a constructor c_0
+(define-metafunction cicL
+  Δ-constructor-ref-parameter-count : Δ_0 c_0 -> n
+  #:pre (Δ-in-constructor-dom Δ_0 c_0)
+  [(Δ-constructor-ref-parameter-count Δ c)
+   n
+   (where (D : n _ _) (Δ-ref-by-constructor Δ c))])
+
 ;; Returns the inductively defined type that x constructs
 (define-metafunction cicL
   Δ-key-by-constructor : Δ_0 c_0 -> D
@@ -354,7 +370,7 @@
   drop-parameters : Δ c Θ -> Θ
   [(drop-parameters Δ c Θ)
    (Θ-drop Θ n)
-   (where (_ _ n _ _) (Δ-ref-by-constructor Δ c))])
+   (where n (Δ-constructor-ref-parameter-count Δ c))])
 
 ;; small step reductions
 (define (cicL--> Δ Γ)
@@ -689,7 +705,7 @@
   #:contract (nested-positivity-condition Δ Γ D D_i t)
 
   [(side-condition (Δ-in-dom Δ D_i))
-   (where (D_i : n _ _) (snoc-env-ref Δ D_i))
+   (where n (Δ-ref-parameter-count Δ D_i))
    (side-condition (not-free-in D (Θ-drop Θ n)))
    -------------------------------------------------------- "NPC-App"
    (nested-positivity-condition Δ Γ D D_i (in-hole Θ D_i))]
@@ -730,7 +746,7 @@
   #:pre (Δ-in-dom Δ_0 D_0)
   [(take-parameters Δ D Θ)
    (Θ-take Θ n)
-   (where (_ _ n _ _) (snoc-env-ref Δ D))])
+   (where n (Δ-ref-parameter-count Δ D))])
 
 ;; Extend Γ with the parameters for D, and let decls determined from Θ
 (define-metafunction cicL
