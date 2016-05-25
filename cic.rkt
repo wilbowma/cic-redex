@@ -486,6 +486,17 @@
    ------------------------------------------------------ "≼-Π"
    (subtype Δ Γ (Π (x_0 : t_0) e_0) (Π (x_1 : t_1) e_1))])
 
+(define-judgment-holds cicL
+  #:mode (valid-parameters I I I I)
+  #:contract (valid-parameters Δ n t t)
+
+  [-------------------------------
+   (valid-parameters Δ 0 t_0 t_1)]
+
+  [(valid-parameters Δ ,(sub1 (term n)) t_0 t_1)
+   -------------------------------------------------------
+   (valid-parameters Δ n (Π (x : t) t_0) (Π (x : t) t_1))])
+
 ;; Holds when the type t is a valid type for a constructor of D
 (define-judgment-form cicL
   #:mode (valid-constructors I I I)
@@ -495,8 +506,9 @@
    (valid-constructors Δ Γ ·)]
 
   [;; constructor's type must return the inductive type D
-   ;; TODO: Check that the telescope Ξ matches the parameters of D
    (where (in-hole Ξ (in-hole Θ D)) t)
+   ;; First n arguments (parameters) of the constructor must match those of the inductive
+   (valid-parameters Δ n t t_D)
    (strict-positivity-cond Δ_0 Γ D t)
    (type-infer Δ Γ t U)
    (valid-constructors Δ_0 (Γ (c : t)) Δc)
