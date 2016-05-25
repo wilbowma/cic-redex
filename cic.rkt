@@ -78,9 +78,9 @@
          (case v (v ...) E (e ...))
          (case v (v ...) v (v ... E e ...)))
     #:binding-forms
-    (λ (x : t) e #:refers-to x)
-    (Π (x : t) e #:refers-to x)
-    (let ([x = e : t]) e_body #:refers-to x)
+    (λ (x : any_t) any #:refers-to x)
+    (Π (x : any_t) any #:refers-to x)
+    (let ([x = any_e : any_t]) any_body #:refers-to x)
     (fix f : t e #:refers-to f))
 
   ;; ------------------------------------------------------------------------
