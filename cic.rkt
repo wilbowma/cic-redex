@@ -486,7 +486,7 @@
    ------------------------------------------------------ "≼-Π"
    (subtype Δ Γ (Π (x_0 : t_0) e_0) (Π (x_1 : t_1) e_1))])
 
-(define-judgment-holds cicL
+(define-judgment-form cicL
   #:mode (valid-parameters I I I I)
   #:contract (valid-parameters Δ n t t)
 
@@ -495,7 +495,7 @@
 
   [(valid-parameters Δ ,(sub1 (term n)) t_0 t_1)
    -------------------------------------------------------
-   (valid-parameters Δ n (Π (x : t) t_0) (Π (x : t) t_1))])
+   (valid-parameters Δ n (Π (x : t) t_0) (Π (y : t) t_1))])
 
 ;; Holds when the type t is a valid type for a constructor of D
 (define-judgment-form cicL
