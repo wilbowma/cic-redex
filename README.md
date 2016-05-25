@@ -15,7 +15,6 @@ We currently model the following parts of the CIC spec:
 * Impredicative Prop
 * Parameterized indexed inductive families;
   Caveats: 
-  - Missing some trivial checks due to focus on other features; see notes in model.
   - Missing mutually inductive families, since they can be encoded via indexed families; see, e.g., [The Rooster and the Syntactic Bracket](https://arxiv.org/abs/1309.5767) for the construction.
 * Strict positivity checking
 * Dependent pattern matching
