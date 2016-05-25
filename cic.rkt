@@ -482,7 +482,7 @@
    ;; TODO: Check that the telescope Ξ matches the parameters of D
    (where (in-hole Ξ (in-hole Θ D)) t)
    (strict-positivity-cond Δ_0 Γ D t)
-   (type-infer Δ (Γ-build (Γ (D : t_D)) Δc ()) t U)
+   (type-infer Δ Γ t U)
    (valid-constructors Δ_0 (Γ (c : t)) Δc)
    -----------------------------------------------------------------"VC-C"
    (valid-constructors (name Δ_0 (Δ (D : n t_D _))) Γ (Δc (c : t)))])
