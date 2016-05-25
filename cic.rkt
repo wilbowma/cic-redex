@@ -154,7 +154,6 @@
    -------------------------------
    (Γ-def-in Γ x e)])
 
-
 ;; --------------------------------------------------------
 ;; Δ defs
 
@@ -202,6 +201,13 @@
    ;; NB: Need to return in reverse-dependency order, while ->als returns in dependency order
    ,(reverse (term (snoc-env->als Δc)))
    (where (_ _ _ _ Δc) (snoc-env-ref Δ D))])
+
+(define-metafunction cicL
+  Δ-ref-constructors : Δ_0 D_0 -> (c ...)
+  #:pre (Δ-in-dom Δ_0 D_0)
+  [(Δ-ref-constructors Δ D)
+   (c ...)
+   (where ((c _ _) ...) (Δ-ref-constructor-map Δ D))])
 
 ;; Return the type of the constructor c_i
 (define-metafunction cicL
@@ -506,8 +512,8 @@
    ;;   Primarily this is because ... notation makes checking the result type of each constructor
    ;;   awkward, but also ... notation makes random testing harder.
    ;; * check t_D directly rather than splitting parameter telescope manually.
-   ;; * TODO: not checking for distinct names
    ;; * Γ must be empty, to guide search
+   (where (c_!_0 ...) (Δ-ref-constructors Δ_0 D))
    (type-infer Δ · t_D U_D)
    (valid-constructors Δ_0 (· (D : t_D)) Δc)
    ---------------------------------------------------------- "W-Ind"
