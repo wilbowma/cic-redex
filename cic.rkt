@@ -63,12 +63,9 @@
     ;; Arguments lists, represented as applications contexts
     (Θ ::= hole (@ Θ e))
     ;; Values
-    (v   ::= c x (in-hole Θv c) (λ (x : t) e) U (Π (x : t) e))
+    (v   ::= c x (in-hole Θv x) (λ (x : t) e) U (Π (x : t) e))
     ;; a beta normal application context, used for constructors applied to their arguments
     (Θv ::= hole (@ Θv v))
-    ;; eta normal forms
-    (nf  ::= (in-hole E x))
-    (λC ::= hole (λ (x : t) λC))
     ;; Evaluation contexts; call-by-value
     (E   ::= hole
          (let ([x = E : t]) e)
@@ -302,25 +299,6 @@
    ,(length (term (Ξ-flatten Ξ)))])
 
 (define-metafunction cicL
-  λC-flatten : λC -> ((x : t) ...)
-  [(λC-flatten hole)
-   ()]
-  [(λC-flatten (λ (x : t) λC))
-   ((x : t) any ...)
-   (where (any ...) (λC-flatten λC))])
-
-(define-metafunction cicL
-  λC-length : λC -> n
-  [(λC-length λC)
-   ,(length (term (λC-flatten λC)))])
-
-(define-metafunction cicL
-  λC->Γ : λC -> Γ
-  [(λC->Γ hole) ·]
-  [(λC->Γ (in-hole λC (λ (x : t) hole)))
-   ((λC->Γ λC) (x : t))])
-
-(define-metafunction cicL
   Ξ-drop : Ξ_0 n_0 -> Ξ
   #:pre ,(<= (term n_0) (term (Ξ-length Ξ_0)))
   [(Ξ-drop Ξ 0)
@@ -408,16 +386,6 @@
         (where Θ_i (drop-parameters ,Δ c Θ))
         "ι1")))
 
-;; eta expansion
-(define cicLη-long
-  (reduction-relation
-   cicL
-   (--> ((in-hole λC nf) (name t (in-hole Ξ (Π (_ : t_x) _))))
-        ((λ (x : t_x) (in-hole λC (@ nf x))) t)
-        (where (n n) ((Ξ-length Ξ) (λC-length λC)))
-        (fresh x)
-        "E-η")))
-
 ;; call-by-value context closure of small step reductions
 (define (cicL-->cbv Δ Γ)
   (context-closure (cicL--> Δ Γ) cicL E))
@@ -428,28 +396,16 @@
   [(beta-short Δ Γ e)
    ,(car (apply-reduction-relation* (cicL-->cbv (term Δ) (term Γ)) (term e) #:cache-all? #t))])
 
-;; run to eta-long form
-(define-metafunction cicL
-  eta-long : e t -> v
-  [(eta-long e t)
-   ,(caar (apply-reduction-relation* cicLη-long (term (e t)) #:cache-all? #t))])
-
 ;; Reduce e to v in the dynamic semantics
-;; Only final syntax, (reduce Δ Γ e t), should be used in type system
+;; Only final syntax, (reduce Δ Γ e), should be used in type system
 ;; Other syntaxes are for convenience of testing/use
 ;; NB: Relies on clause order
 (define-metafunction cicL
-  reduce : any ... e t ... -> v
+  reduce : any ... e -> v
   [(reduce e) (reduce · · e)]
   [(reduce Γ e) (reduce · Γ e)]
   [(reduce Δ Γ e)
-   (reduce Δ Γ e t)
-   (judgment-holds (type-infer Δ Γ e t))]
-  [(reduce Δ Γ e)
-   ;; NB: If can't infer a type, can't eta expand. (Type 9001) is one of many arbitrary choices that will prevent eta
-   (reduce Δ Γ e (Type 9001))]
-  [(reduce Δ Γ e t)
-   (eta-long (beta-short Δ Γ e) t)])
+   (beta-short Δ Γ e)])
 
 ;; What is the upper bound on two universes
 ;; NB: Relies on clause order
@@ -476,9 +432,25 @@
   #:mode (convert I I I I)
   #:contract (convert Δ Γ e_1 e_2)
 
-  [(where (e e) ((reduce Δ Γ e_0) (reduce Δ Γ e_1)))
-   ----------------- "≡"
+  [(where (v_1 v_2) ((reduce Δ Γ e_0) (reduce Δ Γ e_1)))
+   (convert-up-to-eta Δ Γ v_1 v_2)
+   ---------------------- "≡"
    (convert Δ Γ e_0 e_1)])
+
+(define-judgment-form cicL
+  #:mode (convert-up-to-eta I I I I)
+  #:contract (convert-up-to-eta Δ Γ v v)
+
+  [----------------------------"≡-id"
+   (convert-up-to-eta Δ Γ v v)]
+
+  [(convert Δ (Γ (x : t)) e (@ v_2 x))
+   ------------------------------------------ "≡-η₁"
+   (convert-up-to-eta Δ Γ (λ (x : t) e) v_2)]
+
+  [(convert Δ (Γ (x : t)) (@ v_1 x) e)
+   ------------------------------------------ "≡-η₂"
+   (convert-up-to-eta Δ Γ v_1 (λ (x : t) e))])
 
 ;; Is e_1 a subtype of e_2
 (define-judgment-form cicL

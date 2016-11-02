@@ -67,15 +67,10 @@
  #:m (cross e) hole
  #:m (cross e) (@ (λ (x : t) hole) z)
  Iz (reduce (@ (λ (x : (Type 0)) x) Iz))
- 0 (λC-length hole)
- 1 (λC-length (λ (x : Set) hole))
  0 (Ξ-length hole)
  1 (Ξ-length (Π (x : Set) hole))
  f (reduce f)
- #:eq (λ (x : Set) (@ f x)) (reduce (· (f : (Π (x : Set) Set))) f)
- ;; TODO: Some kind of bug in redex-chk #:eq here; have to manually specify default-equiv
- #:eq (default-equiv) (λ (x : INat) (@ Is x)) (reduce Δnb · Is)
- INat (Δ-ref-constructor-type Δnb Iz)
+  INat (Δ-ref-constructor-type Δnb Iz)
  (Π (x : INat) INat) (Δ-ref-constructor-type Δnb Is)
  hole (Δ-ref-index-Ξ Δnb INat hole)
  ((Iz : INat) (Is : (Π (x : INat) INat))) (Δ-ref-constructor-map Δnb INat)
@@ -90,6 +85,12 @@
  #:m (in-hole hole (Π (x : D) U)) (Π (x : INat) Set)
  #:m (in-hole Ξ_D (Π (x : D) U)) (Π (x : INat) Set)
  (reduce Δlist · (case (@ Inil INat) () (λ (ls : (@ IList INat)) IBool) (Itrue Ifalse))) Itrue)
+
+(redex-judgment-holds-chk
+ (convert Δnb ((· (f : (Π (x : Set) Set))) (y : Set)))
+ [(@ f y) (@ f y)]
+ [(λ (x : Set) (@ f x)) f]
+ [(λ (x : INat) (@ Is x)) Is])
 
 (redex-relation-chk
  wf
