@@ -390,23 +390,23 @@
    cicL
    (--> x e
         (judgment-holds (Γ-def-in ,Γ x e))
-        "E-Def")
+        "δ")
    (--> (@ (λ (x : t) e_0) e_1)
         (substitute e_0 x e_1)
-        "E-βΒ")
+        "β")
    (--> (let ([x = e : t]) e_body)
         (substitute e_body x e)
-        "E-Let")
+        "ζ")
    ;; NB: Per CIC spec, must be applied to argument whose head is a constructor to maintain strong
    ;; normalization
    (--> (@ (name e_f (fix f : t_body (λ (x : t) e))) (name e_arg (in-hole Θ c)))
         (subst-all e (f x) (e_f e_arg))
-        "E-Fix")
+        "ι2")
    (--> (case (in-hole Θ c) (e_i ..._1) e_motive (e_methods ..._0))
         (in-hole Θ_i e_mi)
         (where e_mi (select-method ,Δ c e_methods ...))
         (where Θ_i (drop-parameters ,Δ c Θ))
-        "E-Case")))
+        "ι1")))
 
 ;; eta expansion
 (define cicLη-long
