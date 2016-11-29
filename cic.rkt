@@ -905,3 +905,58 @@
    (guard Δ y D f () e)
    ------------------------------------------------------------------------
    (terminates Δ (fix f : t (λ (y : (in-hole Θ D)) e)))])
+
+;; Erase all proofs and Props from a term. For now, erasure replaces Prop with T and terms of type
+;; Prop with tt; only valid when unit type is defined
+(define-judgment-form cicL
+  #:mode (erase I I I I O)
+  #:contract (erase Δ Γ e t e)
+
+  [------------------ "E-Prop"
+   (erase Δ Γ Prop U T)]
+
+  [------------------ "E-Proof"
+   (erase Δ Γ e Prop tt)]
+
+  [(side-condition ,(not (eq? (term t) (term Prop))))
+   ------------------ "E-Var"
+   (erase Δ Γ x t x)]
+
+  [(side-condition ,(not (eq? (term t) (term Prop))))
+   (type-infer Δ Γ t_0 U_0)
+   (type-infer Δ (Γ (x : t_0)) t_1 U_1)
+   (erase Δ Γ t_0 U_0 t_0+)
+   (erase Δ (Γ (x : t_0)) t_1 U_1 t_1+)
+   ------------------ "E-Prod"
+   (erase Δ Γ (Π (x : t_0) t_1) t (Π (x : t_0+) t_1+))]
+
+  [(type-infer Δ Γ t U)
+   (erase Δ Γ t U t_+)
+   (erase Δ (Γ (x : t)) e t_1 e_+)
+   ------------------ "E-Prod"
+   (erase Δ Γ (λ (x : t) e) (Π (x : t) t_1) (λ (x : t_+) e_+))]
+
+  [(side-condition ,(not (eq? (term t) (term Prop))))
+   (type-infer Δ Γ e_0 t_0)
+   (type-infer Δ Γ e_1 t_1)
+   (erase Δ Γ e_0 t_0 e_0+)
+   (erase Δ Γ e_1 t_1 e_1+)
+   ------------------ "E-App"
+   (erase Δ Γ (@ e_0 e_1) t (@ e_0+ e_1+))]
+
+  [(side-condition ,(not (eq? (term t) (term Prop))))
+   (type-infer Δ Γ e_0 t_0)
+   (type-infer Δ Γ e_1 t_1)
+   (erase Δ Γ e_0 t_0 e_0+)
+   (erase Δ Γ e_1 t_1 e_1+)
+   ------------------ "E-App"
+   (erase Δ Γ (case e_D (e_i ...) e_motive (e_methods ...)) t
+          (case ))])
+
+(define-judgment-form cicL
+  #:mode (not-Prop i)
+  #:contract (not-Prop e)
+
+  [
+   -------------
+   (not-Prop e)])
