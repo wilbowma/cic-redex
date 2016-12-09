@@ -390,12 +390,6 @@
 (define (cicL-->cbv Δ Γ)
   (context-closure (cicL--> Δ Γ) cicL E))
 
-;; run to beta-short form
-(define-metafunction cicL
-  beta-short : Δ Γ e -> v
-  [(beta-short Δ Γ e)
-   ,(car (apply-reduction-relation* (cicL-->cbv (term Δ) (term Γ)) (term e) #:cache-all? #t))])
-
 ;; Reduce e to v in the dynamic semantics
 ;; Only final syntax, (reduce Δ Γ e), should be used in type system
 ;; Other syntaxes are for convenience of testing/use
@@ -405,7 +399,7 @@
   [(reduce e) (reduce · · e)]
   [(reduce Γ e) (reduce · Γ e)]
   [(reduce Δ Γ e)
-   (beta-short Δ Γ e)])
+   ,(car (apply-reduction-relation* (cicL-->cbv (term Δ) (term Γ)) (term e) #:cache-all? #t))])
 
 ;; What is the upper bound on two universes
 ;; NB: Relies on clause order
@@ -666,19 +660,18 @@
    ---------------------------------------- "OSP-NotIn"
    (occurs-strictly-positively Δ Γ D t)]
 
-  ;; NB: positivity checking wants beta-short form rather than eta-long
-  [(where (in-hole Θ D) (beta-short Δ Γ t))
+  [(where (in-hole Θ D) (reduce Δ Γ t))
    (side-condition (not-free-in D Θ))
    ---------------------------------------- "OSP-NotArg"
    (occurs-strictly-positively Δ Γ D t)]
 
-  [(where (Π (x : t_0) t_1) (beta-short Δ Γ t))
+  [(where (Π (x : t_0) t_1) (reduce Δ Γ t))
    (side-condition (not-free-in D t_0))
    (occurs-strictly-positively Δ Γ D t_1)
    ---------------------------------------- "OSP-Π"
    (occurs-strictly-positively Δ Γ D t)]
 
-  [(where (in-hole Θ D_i) (beta-short Δ Γ t))
+  [(where (in-hole Θ D_i) (reduce Δ Γ t))
    (where (D_!_0 D_!_0) (D D_i)) ;; D_i is a different inductive type
    (side-condition (Δ-in-dom Δ D_i))
    ;; TODO: Should not be using snoc-env-ref; interface should be  w.r.t. Δ
