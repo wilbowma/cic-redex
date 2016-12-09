@@ -36,117 +36,117 @@
  [(Π (a : Prop) Prop) U])
 
 (define-term Δnb
-  ((· (INat : 0 Set ((· (Iz : INat)) (Is : (Π (x : INat) INat)))))
-   (IBool : 0 Set ((· (Itrue : IBool)) (Ifalse : IBool)))))
+  ((· (Nat : 0 Set ((· (z : Nat)) (s : (Π (x : Nat) Nat)))))
+   (Bool : 0 Set ((· (true : Bool)) (false : Bool)))))
 
 ;; Tests parameters
 (define-term Δlist
-  (Δnb (IList : 1 (Π (A : Set) Set)
-              ((· (Inil : (Π (A : Set) (@ IList A))))
-               (Icons : (-> (A : Set) (a : A) (ls : (@ IList A)) (@ IList A)))))))
+  (Δnb (List : 1 (Π (A : Set) Set)
+              ((· (nil : (Π (A : Set) (@ List A))))
+               (cons : (-> (A : Set) (a : A) (ls : (@ List A)) (@ List A)))))))
 ;; Bad; this syntax is surface syntax, not core syntax
 (define-term Δbadlist
-  (Δnb (IList : 1 (Π (A : Set) Set)
-              ((· (Inil : (@ IList A)))
-               (Icons : (-> (a : A) (ls : (@ IList A)) (@ IList A)))))))
+  (Δnb (List : 1 (Π (A : Set) Set)
+              ((· (nil : (@ List A)))
+               (cons : (-> (a : A) (ls : (@ List A)) (@ List A)))))))
 (redex-chk
  #f (not-free-in D D)
  hole (substitute hole D y)
  #t (not-free-in D hole)
- INat (reduce Δnb · INat))
+ Nat (reduce Δnb · Nat))
 
 (redex-judgment-holds-chk
  (strict-positivity-cond Δnb ·)
- [IBool IBool]
- [INat INat]
- [INat (Π (x : INat) INat)])
+ [Bool Bool]
+ [Nat Nat]
+ [Nat (Π (x : Nat) Nat)])
 
 ;; TODO: Some of these tests are in the wrong order; i.e., actual/expected are flipped
 (redex-chk
  #:lang cicL
  #:m (cross e) hole
  #:m (cross e) (@ (λ (x : t) hole) z)
- Iz (reduce (@ (λ (x : (Type 0)) x) Iz))
+ z (reduce (@ (λ (x : (Type 0)) x) z))
  0 (Ξ-length hole)
  1 (Ξ-length (Π (x : Set) hole))
  f (reduce f)
-  INat (Δ-ref-constructor-type Δnb Iz)
- (Π (x : INat) INat) (Δ-ref-constructor-type Δnb Is)
- hole (Δ-ref-index-Ξ Δnb INat hole)
- ((Iz : INat) (Is : (Π (x : INat) INat))) (Δ-ref-constructor-map Δnb INat)
- (hole (Π (x : INat) hole)) ((Δ-constructor-ref-index-Ξ Δnb Iz hole)
-                             (Δ-constructor-ref-index-Ξ Δnb Is hole))
- hole (Δ-constructor-ref-index-Ξ Δlist Inil (@ hole INat))
- INat (reduce (in-hole (@ hole Iz) (λ (x : INat) INat)))
- INat (Ξ-apply hole INat)
- (Π (x : INat) Set) (in-hole hole (Π (x : (Ξ-apply hole INat)) Set))
- INat (Δ-key-by-constructor Δnb Iz)
- Iz (reduce Δnb · (case Iz (λ (x : INat) INat) (Iz (λ (x : INat) x))))
- #:m (in-hole hole (Π (x : D) U)) (Π (x : INat) Set)
- #:m (in-hole Ξ_D (Π (x : D) U)) (Π (x : INat) Set)
- (reduce Δlist · (case (@ Inil INat) (λ (ls : (@ IList INat)) IBool) (Itrue Ifalse))) Itrue)
+  Nat (Δ-ref-constructor-type Δnb z)
+ (Π (x : Nat) Nat) (Δ-ref-constructor-type Δnb s)
+ hole (Δ-ref-index-Ξ Δnb Nat hole)
+ ((z : Nat) (s : (Π (x : Nat) Nat))) (Δ-ref-constructor-map Δnb Nat)
+ (hole (Π (x : Nat) hole)) ((Δ-constructor-ref-index-Ξ Δnb z hole)
+                             (Δ-constructor-ref-index-Ξ Δnb s hole))
+ hole (Δ-constructor-ref-index-Ξ Δlist nil (@ hole Nat))
+ Nat (reduce (in-hole (@ hole z) (λ (x : Nat) Nat)))
+ Nat (Ξ-apply hole Nat)
+ (Π (x : Nat) Set) (in-hole hole (Π (x : (Ξ-apply hole Nat)) Set))
+ Nat (Δ-key-by-constructor Δnb z)
+ z (reduce Δnb · (case z (λ (x : Nat) Nat) (z (λ (x : Nat) x))))
+ #:m (in-hole hole (Π (x : D) U)) (Π (x : Nat) Set)
+ #:m (in-hole Ξ_D (Π (x : D) U)) (Π (x : Nat) Set)
+ (reduce Δlist · (case (@ nil Nat) (λ (ls : (@ List Nat)) Bool) (true false))) true)
 
 (redex-judgment-holds-chk
  (convert Δnb ((· (f : (Π (x : Set) Set))) (y : Set)))
  [(@ f y) (@ f y)]
  [(λ (x : Set) (@ f x)) f]
- [(λ (x : INat) (@ Is x)) Is])
+ [(λ (x : Nat) (@ s x)) s])
 
 (redex-relation-chk
  wf
  [· ·]
  [Δnb ·]
- [Δnb (· (x : INat))]
+ [Δnb (· (x : Nat))]
  [Δlist ·]
  [#:f Δbadlist ·])
 
 (redex-judgment-holds-chk
  (type-infer Δlist ·)
- [(λ (x : INat) INat) t]
- [(λ (x : INat) INat) t]
- [(case Iz (λ (x : INat) INat) (Iz (λ (x : INat) x))) t]
- [#:f Inil (@ IList A)]
- [(@ Inil INat) t])
+ [(λ (x : Nat) Nat) t]
+ [(λ (x : Nat) Nat) t]
+ [(case z (λ (x : Nat) Nat) (z (λ (x : Nat) x))) t]
+ [#:f nil (@ List A)]
+ [(@ nil Nat) t])
 
 (redex-relation-chk
  type-check
- [· (· (INat : (Type 0))) (Π (n : INat) INat) (Type 1)]
- [· (· (INat : Set)) (Π (n : INat) INat) (Type 1)]
- [Δnb (· (x : INat)) INat Set])
+ [· (· (Nat : (Type 0))) (Π (n : Nat) Nat) (Type 1)]
+ [· (· (Nat : Set)) (Π (n : Nat) Nat) (Type 1)]
+ [Δnb (· (x : Nat)) Nat Set])
 
 (redex-relation-chk
  (type-check Δlist ·)
- [INat Set]
- [Iz INat]
- [(@ Is Iz) INat]
- [(Π (x : INat) Set) (Type 1)]
- [(λ (x : INat) INat) (Π (x : INat) Set)]
- [(λ (x : INat) INat) (Π (x : INat) Set)]
- [(λ (x : INat) x) (Π (x : INat) INat)]
- [(case Iz (λ (x : INat) INat) (Iz (λ (x : INat) x))) INat]
- [(case Itrue (λ (x : IBool) INat) (Iz (@ Is Iz))) INat]
- [(fix f : (-> INat INat)
-       (λ (x : INat)
-         (case x (λ (x : INat) INat)
-               (Iz
-                (λ (x : INat) (@ Is x))))))
-  (Π (x : INat) INat)]
- [(fix f : (-> INat INat)
-       (λ (x : INat)
-         (case x (λ (x : INat) INat)
-               (Iz
-                (λ (x : INat) (@ f x))))))
-  (Π (x : INat) INat)]
- [#:f (fix f : (-> INat INat)
-           (λ (x : INat)
-             (case x (λ (x : INat) INat)
+ [Nat Set]
+ [z Nat]
+ [(@ s z) Nat]
+ [(Π (x : Nat) Set) (Type 1)]
+ [(λ (x : Nat) Nat) (Π (x : Nat) Set)]
+ [(λ (x : Nat) Nat) (Π (x : Nat) Set)]
+ [(λ (x : Nat) x) (Π (x : Nat) Nat)]
+ [(case z (λ (x : Nat) Nat) (z (λ (x : Nat) x))) Nat]
+ [(case true (λ (x : Bool) Nat) (z (@ s z))) Nat]
+ [(fix f : (-> Nat Nat)
+       (λ (x : Nat)
+         (case x (λ (x : Nat) Nat)
+               (z
+                (λ (x : Nat) (@ s x))))))
+  (Π (x : Nat) Nat)]
+ [(fix f : (-> Nat Nat)
+       (λ (x : Nat)
+         (case x (λ (x : Nat) Nat)
+               (z
+                (λ (x : Nat) (@ f x))))))
+  (Π (x : Nat) Nat)]
+ [#:f (fix f : (-> Nat Nat)
+           (λ (x : Nat)
+             (case x (λ (x : Nat) Nat)
                    ((@ f x)
-                    (λ (y : INat) (@ f x))))))
-  (Π (x : INat) INat)]
- [(λ (x : INat) x) (Π (x : INat) INat)]
- [(let ([n = Iz : INat]) Iz) INat]
- [(let ([n = Iz : INat]) n) INat]
- [(let ([INat^ = INat : Set] [n = Iz : INat^]) n) INat]
- [(@ Icons INat Iz (@ Inil INat)) (@ IList INat)]
- [(case (@ Icons INat Iz (@ Inil INat)) (λ (ls : (@ IList INat)) IBool)
-        (Itrue (λ (n : INat) (ls : (@ IList INat)) Ifalse)) )IBool])
+                    (λ (y : Nat) (@ f x))))))
+  (Π (x : Nat) Nat)]
+ [(λ (x : Nat) x) (Π (x : Nat) Nat)]
+ [(let ([n = z : Nat]) z) Nat]
+ [(let ([n = z : Nat]) n) Nat]
+ [(let ([Nat^ = Nat : Set] [n = z : Nat^]) n) Nat]
+ [(@ cons Nat z (@ nil Nat)) (@ List Nat)]
+ [(case (@ cons Nat z (@ nil Nat)) (λ (ls : (@ List Nat)) Bool)
+        (true (λ (n : Nat) (ls : (@ List Nat)) false))) Bool])

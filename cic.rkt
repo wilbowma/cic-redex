@@ -27,10 +27,7 @@
     #;[-> Π]))
   (define-language cicL
     (i j k n ::= natural)
-    ;; It is useful to distinguish variables and constants. Variables are anything, while constants
-    ;; (inductives and their constructors) must be prefixed by I
-    (x y f ::= variable-not-otherwise-mentioned)
-    (c D ::= (variable-prefix I))
+    (c D x y f ::= variable-not-otherwise-mentioned)
     (U   ::= (Type i) Set Prop)
     (e t ::= c x (λ (x : t) e) (@ e e) (Π (x : t) t) U
        (let ([x = e : t]) e)
