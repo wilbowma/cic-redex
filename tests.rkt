@@ -81,10 +81,10 @@
  INat (Ξ-apply hole INat)
  (Π (x : INat) Set) (in-hole hole (Π (x : (Ξ-apply hole INat)) Set))
  INat (Δ-key-by-constructor Δnb Iz)
- Iz (reduce Δnb · (case Iz () (λ (x : INat) INat) (Iz (λ (x : INat) x))))
+ Iz (reduce Δnb · (case Iz (λ (x : INat) INat) (Iz (λ (x : INat) x))))
  #:m (in-hole hole (Π (x : D) U)) (Π (x : INat) Set)
  #:m (in-hole Ξ_D (Π (x : D) U)) (Π (x : INat) Set)
- (reduce Δlist · (case (@ Inil INat) () (λ (ls : (@ IList INat)) IBool) (Itrue Ifalse))) Itrue)
+ (reduce Δlist · (case (@ Inil INat) (λ (ls : (@ IList INat)) IBool) (Itrue Ifalse))) Itrue)
 
 (redex-judgment-holds-chk
  (convert Δnb ((· (f : (Π (x : Set) Set))) (y : Set)))
@@ -104,7 +104,7 @@
  (type-infer Δlist ·)
  [(λ (x : INat) INat) t]
  [(λ (x : INat) INat) t]
- [(case Iz () (λ (x : INat) INat) (Iz (λ (x : INat) x))) t]
+ [(case Iz (λ (x : INat) INat) (Iz (λ (x : INat) x))) t]
  [#:f Inil (@ IList A)]
  [(@ Inil INat) t])
 
@@ -123,23 +123,23 @@
  [(λ (x : INat) INat) (Π (x : INat) Set)]
  [(λ (x : INat) INat) (Π (x : INat) Set)]
  [(λ (x : INat) x) (Π (x : INat) INat)]
- [(case Iz () (λ (x : INat) INat) (Iz (λ (x : INat) x))) INat]
- [(case Itrue () (λ (x : IBool) INat) (Iz (@ Is Iz))) INat]
+ [(case Iz (λ (x : INat) INat) (Iz (λ (x : INat) x))) INat]
+ [(case Itrue (λ (x : IBool) INat) (Iz (@ Is Iz))) INat]
  [(fix f : (-> INat INat)
        (λ (x : INat)
-         (case x () (λ (x : INat) INat)
+         (case x (λ (x : INat) INat)
                (Iz
                 (λ (x : INat) (@ Is x))))))
   (Π (x : INat) INat)]
  [(fix f : (-> INat INat)
        (λ (x : INat)
-         (case x () (λ (x : INat) INat)
+         (case x (λ (x : INat) INat)
                (Iz
                 (λ (x : INat) (@ f x))))))
   (Π (x : INat) INat)]
  [#:f (fix f : (-> INat INat)
            (λ (x : INat)
-             (case x () (λ (x : INat) INat)
+             (case x (λ (x : INat) INat)
                    ((@ f x)
                     (λ (y : INat) (@ f x))))))
   (Π (x : INat) INat)]
@@ -148,5 +148,5 @@
  [(let ([n = Iz : INat]) n) INat]
  [(let ([INat^ = INat : Set] [n = Iz : INat^]) n) INat]
  [(@ Icons INat Iz (@ Inil INat)) (@ IList INat)]
- [(case (@ Icons INat Iz (@ Inil INat)) () (λ (ls : (@ IList INat)) IBool)
+ [(case (@ Icons INat Iz (@ Inil INat)) (λ (ls : (@ IList INat)) IBool)
         (Itrue (λ (n : INat) (ls : (@ IList INat)) Ifalse)) )IBool])

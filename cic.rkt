@@ -32,23 +32,14 @@
     (x y f ::= variable-not-otherwise-mentioned)
     (c D ::= (variable-prefix I))
     (U   ::= (Type i) Set Prop)
-    (^case ::= (case e_D ;; Discriminant
-                 ;; The indices for the type D
-                 (e_i ...)
-                 ;; Motive: takes indices of D, binds e_D.
-                 e_motive
-                 ;; Methods.
-                 (e_methods ...)))
     (e t ::= c x (λ (x : t) e) (@ e e) (Π (x : t) t) U
        (let ([x = e : t]) e)
-       ^case
-       ;; Per Ch. 4 of Coq reference manual, fix is syntactically restricted more or less to the
-       ;; following + termination checker to ensure termination.
-       ;; NB: Must be defined by induction on the first argument of fix body; no support for mutual
-       ;; recursion.
-       (fix f : t fix-body))
-    ;; fix-body ⊂ e
-    (fix-body ::= (λ (x : t) ^case) (λ (x : t) fix-body))
+       (case e_D ;; Discriminant
+         ;; Motive: takes indices of D, binds e_D.
+         e_motive
+         ;; Methods.
+         (e_methods ...))
+       (fix f : t e))
     ;; Local environment
     (Γ-decl ::= (x : t) (x = e : t))
     (Γ   ::= · (Γ Γ-decl))
@@ -70,10 +61,9 @@
     (E   ::= hole
          (let ([x = E : t]) e)
          (@ E e) (@ v E)
-         (case E (e ...) e (e ...))
-         (case v (v ... E e ...) e (e ...))
-         (case v (v ...) E (e ...))
-         (case v (v ...) v (v ... E e ...)))
+         (case E e (e ...))
+         (case v E (e ...))
+         (case v v (v ... E e ...)))
     #:binding-forms
     (λ (x : any_t) any #:refers-to x)
     (Π (x : any_t) any #:refers-to x)
@@ -380,7 +370,7 @@
    (--> (@ (name e_f (fix f : t_body (λ (x : t) e))) (name e_arg (in-hole Θ c)))
         (subst-all e (f x) (e_f e_arg))
         "ι2")
-   (--> (case (in-hole Θ c) (e_i ..._1) e_motive (e_methods ..._0))
+   (--> (case (in-hole Θ c) e_motive (e_methods ..._0))
         (in-hole Θ_i e_mi)
         (where e_mi (select-method ,Δ c e_methods ...))
         (where Θ_i (drop-parameters ,Δ c Θ))
@@ -602,6 +592,9 @@
    (type-infer Δ Γ e (name t_I (in-hole Θ D)))
 
    (where Θ_p (take-parameters Δ D Θ))
+   (where (D _ n _ _) (snoc-env-ref Δ D))
+   ;; NB: Can't use drop-parameters since that expects constructor
+   (where (e_i ...) (Θ-flatten (Θ-drop Θ n)))
    ;; check the indices match the inductive type
    (check-indices Δ Γ D Θ_p (e_i ...))
    ;; Check the motive matches the inductive type
@@ -612,7 +605,7 @@
    ;; Check the methods match their constructors, and return type from motive
    (check-methods Δ Γ D t Θ_p (e_m ...))
    ------------------------------------------------------------- "match"
-   (type-infer Δ Γ (case e (e_i ..._0) e_motive (e_m ..._1)) t)]
+   (type-infer Δ Γ (case e e_motive (e_m ..._1)) t)]
 
   [(terminates Δ e_fix)
    (type-check Δ (Γ (f : t)) e t)
