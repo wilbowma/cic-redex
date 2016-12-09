@@ -402,24 +402,31 @@
    ,(car (apply-reduction-relation* (cicL-->cbv (term Δ) (term Γ)) (term e) #:cache-all? #t))])
 
 ;; What is the upper bound on two universes
-;; NB: Relies on clause order
-(define-metafunction cicL
-  max-U : U U -> U
-  [(max-U Prop U)
-   U]
-  [(max-U U Prop)
-   U]
-  [(max-U Set (Type i))
-   (Type i)]
-  [(max-U (Type i) Set)
-   (Type i)]
-  [(max-U U Set)
-   Set]
-  [(max-U Set U)
-   Set]
-  [(max-U (Type i) (Type j))
-   (Type k)
-   (where k ,(max (term i) (term j)))])
+(define-judgment-form cicL
+  #:mode (<=U I I)
+  #:contract (<=U U U)
+
+  [-----------------
+   (<=U Prop U)]
+
+  [-----------------
+   (<=U Set (Type i))]
+
+  [(side-condition ,(<= (term i) (term j)))
+   -----------------------------------
+   (<=U (Type i) (Type j))])
+
+(define-judgment-form cicL
+  #:mode (max-U I I O)
+  #:contract (max-U U U U)
+
+  [(<=U U_1 U_2)
+   --------------------
+   (max-U U_1 U_2 U_2)]
+
+  [(<=U U_2 U_1)
+   --------------------
+   (max-U U_1 U_2 U_1)])
 
 ;; Is e_1 convertible to e_2?
 (define-judgment-form cicL
@@ -455,7 +462,7 @@
    ---------------------- "≼-≡"
    (subtype Δ Γ e_0 e_1)]
 
-  [(where U_1 (max-U U_0 U_1))
+  [(max-U U_0 U_1 U_1)
    ---------------------- "≼-U"
    (subtype Δ Γ U_0 U_1)]
 
@@ -562,7 +569,7 @@
 
   [(type-infer Δ Γ t_0 U_1)
    (type-infer Δ (Γ (x : t_0)) t U_2)
-   (where U_3 (max-U U_1 U_2))
+   (max-U U_1 U_2 U_3)
    -------------------------------------- "Prod-Type"
    (type-infer Δ Γ (Π (x : t_0) t) U_3)]
 
