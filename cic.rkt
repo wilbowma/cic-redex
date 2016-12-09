@@ -785,53 +785,23 @@
 ;; ------------------------------------------------------------------------
 ;; termination checking
 
-;; Is e structurally smaller than y (of type D), with structurally smaller recursive arguments (x ...)?
-(define-judgment-form cicL
-  #:mode (structurally-smaller I I I I I)
-  #:contract (structurally-smaller Δ y (x ...) D e)
-
-  [-----------------------------------------------
-   (structurally-smaller Δ y (_ ... x _ ...) D x)]
-
-  [(structurally-smaller Δ y any D e)
-   -----------------------------------------------
-   (structurally-smaller Δ y any D (λ (x : t) e))]
-
-  [(structurally-smaller Δ y any D e_1)
-   ---------------------------------------------
-   (structurally-smaller Δ y any D (@ e_1 e_2))]
-
-  [(structurally-smaller Δ y any D e_method) ...
-   ---------------------------------------------------------------
-   (structurally-smaller Δ y any D (case e_c _ _ (e_method ...)))]
-
-  [(where ((c _ _) ...) (Δ-ref-constructor-map Δ D))
-   (where (((x_more ...) e_body) ...) (split-methods Δ D any))
-   (structurally-smaller Δ y (x ... x_more ...) D e_body) ...
-   -----------------------------------------------------------------
-   (structurally-smaller Δ y (x ...) D (case y _ _ any))]
-
-  [(structurally-smaller Δ y (x ...) D e_c)
-   (where (((x_more ...) e_body) ...) (split-methods Δ D any))
-   (structurally-smaller Δ y (x ... x_more ...) D e_body) ...
-   -------------------------------------------------------------------
-   (structurally-smaller Δ y (x ...) D (case e_c _ _ any))])
-
 ;; Check that the body of f, e, is guarded w.r.t y, an inductive argument of type D, with
 ;; accumulated recursive arguments (x ...).
 (define-judgment-form cicL
   #:mode (guard I I I I I I)
   #:contract (guard Δ y D f (x ...) e)
 
-  [(structurally-smaller Δ y any D e)
+  [(side-condition ,(memq (term x) (term any)))
+   (where (e ...) (Θ-flatten Θ))
+   (guard Δ y D f any e) ...
    --------------------------
-   (guard Δ y D f any (@ f e))]
+   (guard Δ y D f any (@ f (in-hole Θ x)))]
 
   [--------------------
    (guard _ _ _ _ _ U)]
 
   [--------------------
-   (guard _ _ _ _ _ x)]
+   (guard _ _ _ f_!_0 _ f_!_0)]
 
   [(guard Δ y D f any e_1)
    (guard Δ y D f any e_2)
@@ -840,37 +810,34 @@
 
   [(guard Δ y D f any t)
    (guard Δ y D f any e)
-   ------------------------------
+   ----------------------------------
    (guard Δ y D f any (λ (x : t) e))]
 
   [(guard Δ y D f any t)
    (guard Δ y D f any e)
-   ------------------------------
+   ----------------------------------
    (guard Δ y D f any (Π (x : t) e))]
 
   [(guard Δ y D f any e)
-   (guard Δ y D f any e_i) ...
    (guard Δ y D f any e_motive)
    (guard Δ y D f any e_methods) ...
-   ----------------------------------------------------------------
-   (guard Δ y D f any (case e (e_i ...) e_motive (e_methods ...)))]
+   ------------------------------------------------------
+   (guard Δ y D f any (case e e_motive (e_methods ...)))]
 
-  [(structurally-smaller Δ y (x ...) D e)
-   (guard Δ y D f (x ...) e_i) ...
+  [(guard Δ y D f (x ...) e)
    (guard Δ y D f (x ...) e_motive)
    ;; structurally smaller variables.
    (where (((x_more ...) e_body) ...) (split-methods Δ D any))
    (guard Δ y D f (x ... x_more ...) e_body) ...
-   ----------------------------------------------------------------
-   (guard Δ y D f (x ...) (case e (e_i ...) e_motive any))]
+   ----------------------------------------------
+   (guard Δ y D f (x ...) (case e e_motive any))]
 
-  [(guard Δ y D f (x ...) e_i) ...
-   (guard Δ y D f (x ...) e_motive)
+  [(guard Δ y D f (x ...) e_motive)
    ;; structurally smaller variables.
    (where (((x_more ...) e_body) ...) (split-methods Δ D any))
    (guard Δ y D f (x ... x_more ...) e_body) ...
-   --------------------------------------------------------
-   (guard Δ y D f (x ...) (case y (e_i ...) e_motive any))])
+   ----------------------------------------------
+   (guard Δ y D f (x ...) (case y e_motive any))])
 
 ;; Splits the methods into their structurally smaller arguments and the body of the method
 (define-metafunction cicL
@@ -897,4 +864,4 @@
   [(Δ-type-in Δ D _)
    (guard Δ y D f () e)
    ------------------------------------------------------------------------
-   (terminates Δ (fix f : t (λ (y : (in-hole Θ D)) e)))])
+   (terminates Δ (fix f : (Π (x : (in-hole Θ D)) t) (λ (y : (in-hole Θ D)) e)))])
