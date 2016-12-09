@@ -474,21 +474,21 @@
 
 ;; Holds when the type t is a valid type for a constructor of D
 (define-judgment-form cicL
-  #:mode (valid-constructors I I I)
-  #:contract (valid-constructors (Δ (D : n t Δc)) Γ Δc)
+  #:mode (valid-constructors I I)
+  #:contract (valid-constructors (Δ (D : n t Δc)) Δc)
 
   [--------------------------- "VC-Empty"
-   (valid-constructors Δ Γ ·)]
+   (valid-constructors Δ ·)]
 
   [;; constructor's type must return the inductive type D
    (where (in-hole Ξ (in-hole Θ D)) t)
    ;; First n arguments (parameters) of the constructor must match those of the inductive
    (valid-parameters Δ n t t_D)
-   (strict-positivity-cond Δ_0 Γ D t)
-   (type-infer Δ Γ t U)
-   (valid-constructors Δ_0 (Γ (c : t)) Δc)
+   (strict-positivity-cond Δ_0 (· (D : t_D)) D t)
+   (type-infer Δ (· (D : t_D)) t U)
+   (valid-constructors Δ_0 Δc)
    -----------------------------------------------------------------"VC-C"
-   (valid-constructors (name Δ_0 (Δ (D : n t_D _))) Γ (Δc (c : t)))])
+   (valid-constructors (name Δ_0 (Δ (D : n t_D _))) (Δc (c : t)))])
 
 ;; Under global declarations Δ, is the term environment well-formed?
 (define-judgment-form cicL
@@ -518,7 +518,7 @@
    ;; * Γ must be empty, to guide search
    (where (c_!_0 ...) (Δ-ref-constructors Δ_0 D))
    (type-infer Δ · t_D U_D)
-   (valid-constructors Δ_0 (· (D : t_D)) Δc)
+   (valid-constructors Δ_0 Δc)
    ---------------------------------------------------------- "W-Ind"
    (wf (name Δ_0 (Δ (D : n (name t_D (in-hole Ξ U)) Δc))) ·)])
 
